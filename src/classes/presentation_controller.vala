@@ -98,6 +98,11 @@ namespace pdfpc {
          */
         protected TimerLabel timer;
 
+        /*
+         * Manager for the movies in the presentation
+         */
+        public MovieManager movie_manager;
+
         /**
          * Instantiate a new controller
          */
@@ -106,6 +111,7 @@ namespace pdfpc {
             this.black_on_end = allow_black_on_end;
 
             this.controllables = new List<Controllable>();
+            this.movie_manager = new MovieManager(this);
 
             // Calculate the countdown to display until the presentation has to
             // start
