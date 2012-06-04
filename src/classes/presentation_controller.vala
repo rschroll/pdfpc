@@ -215,13 +215,13 @@ namespace pdfpc {
                             exit_some_state = true;
                         }
                         if (this.timer.is_paused()) {
-			    this.toggle_pause();
+                             this.toggle_pause();
                             exit_some_state = true;
                         }
-			if (!exit_some_state) {
-	                    this.metadata.save_to_disk();
-        	            Gtk.main_quit();
-			}	
+                        if (!exit_some_state) {
+                            this.metadata.save_to_disk();
+                            Gtk.main_quit();
+                        }
                     break;
                     case 0x071:  /* q */
                         this.metadata.save_to_disk();
@@ -255,7 +255,7 @@ namespace pdfpc {
                     case 0x073: /* s */
                         this.start();
                     break;
-		    case 0x070: /* p */
+                    case 0x070: /* p */
                     case 0xff13: /* pause */
                         this.toggle_pause();
                     break;
