@@ -142,6 +142,11 @@ namespace pdfpc {
             this.current_user_slide_number = 0;
         }
 
+        public void quit() {
+            this.metadata.quit();
+            Gtk.main_quit();
+        }
+
         public void set_overview(Window.Overview o) {
             this.overview = o;
         }
@@ -219,13 +224,11 @@ namespace pdfpc {
                             exit_some_state = true;
                         }
                         if (!exit_some_state) {
-                            this.metadata.save_to_disk();
-                            Gtk.main_quit();
+                            this.quit();
                         }
                     break;
                     case 0x071:  /* q */
-                        this.metadata.save_to_disk();
-                        Gtk.main_quit();
+                        this.quit();
                     break;
                     case 0x072: /* r */
                         this.controllables_reset();
@@ -289,8 +292,7 @@ namespace pdfpc {
             switch( key.keyval ) {
                 case 0xff1b: /* Escape */
                 case 0x071:  /* q */
-                    this.metadata.save_to_disk();
-                    Gtk.main_quit();
+                    this.quit();
                     handled = true;
                 break;
                 case 0x072: /* r */
