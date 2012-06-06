@@ -142,6 +142,9 @@ namespace pdfpc {
             this.current_user_slide_number = 0;
         }
 
+        /*
+         * Inform metadata of quit, and then quit.
+         */
         public void quit() {
             this.metadata.quit();
             Gtk.main_quit();
