@@ -138,6 +138,7 @@ namespace pdfpc {
 
             Gdk.threads_init();
             Gtk.init( ref args );
+            Gst.init( ref args );
 
             // Initialize the application wide mutex objects
             MutexLocks.init();
