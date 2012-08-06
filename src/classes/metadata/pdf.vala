@@ -496,11 +496,7 @@ namespace pdfpc.Metadata {
                     mapping.deactivate();
                 this.action_mapping = null; //.Is this really the correct way to clear a list?
 
-#if VALA_0_16
                 GLib.List<Poppler.LinkMapping> link_mappings;
-#else
-                unowned GLib.List<unowned Poppler.LinkMapping> link_mappings;
-#endif
                 link_mappings = this.get_document().get_page(page_num).get_link_mapping();
                 foreach (unowned Poppler.LinkMapping mapping in link_mappings) {
                     foreach (var blank in blanks) {
@@ -512,15 +508,9 @@ namespace pdfpc.Metadata {
                     }
                 }
                 // Free the mapping memory; already in lock
-#if !VALA_0_16
-                Poppler.Page.free_link_mapping(link_mappings);
-#endif
+                //Poppler.Page.free_link_mapping(link_mappings);
 
-#if VALA_0_16
                 GLib.List<Poppler.AnnotMapping> annot_mappings;
-#else
-                unowned GLib.List<Poppler.AnnotMapping> annot_mappings;
-#endif
                 annot_mappings = this.get_document().get_page(page_num).get_annot_mapping();
                 foreach (unowned Poppler.AnnotMapping mapping in annot_mappings) {
                     foreach (var blank in blanks) {
@@ -532,9 +522,7 @@ namespace pdfpc.Metadata {
                     }
                 }
                 // Free the mapping memory; already in lock
-#if !VALA_0_16
-                Poppler.Page.free_annot_mapping(annot_mappings);
-#endif
+                //Poppler.Page.free_annot_mapping(annot_mappings);
 
                 this.mapping_page_num = page_num;
             }
