@@ -6,9 +6,10 @@ pkg_check_modules(POPPLER REQUIRED poppler-glib)
 pkg_check_modules(GTK REQUIRED gtk+-2.0)
 pkg_check_modules(GTHREAD REQUIRED gthread-2.0)
 pkg_check_modules(RSVG REQUIRED librsvg-2.0)
-pkg_check_modules(GSTREAMER REQUIRED gstreamer-0.10)
-pkg_check_modules(GSTINTERFACES REQUIRED gstreamer-interfaces-0.10)
-pkg_check_modules(GSTVIDEO REQUIRED gstreamer-video-0.10)
+pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
+pkg_check_modules(GSTBASE REQUIRED gstreamer-base-1.0)
+pkg_check_modules(GSTAUDIO REQUIRED gstreamer-audio-1.0)
+pkg_check_modules(GSTVIDEO REQUIRED gstreamer-video-1.0)
 pkg_check_modules(GDKX11 REQUIRED gdk-x11-2.0)
 pkg_check_modules(GEE REQUIRED gee-1.0)
 
@@ -77,14 +78,17 @@ PACKAGES
 	gtk+-2.0
 	posix
         librsvg-2.0
-        gstreamer-0.10
-        gstreamer-interfaces-0.10
-	gstreamer-video-0.10
+        gstreamer-1.0
+        gstreamer-base-1.0
+        gstreamer-audio-1.0
+        gstreamer-video-1.0
         gdk-x11-2.0
         gee-1.0
 OPTIONS 
 	--thread
 	--debug
+	--enable-deprecated
+	--enable-experimental
 GENERATE_HEADER
 	presenter
 GENERATE_VAPI
