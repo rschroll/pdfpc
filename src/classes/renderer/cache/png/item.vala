@@ -30,19 +30,37 @@ namespace pdfpc.Renderer.Cache {
         /**
          * PNG picture data stored for this item
          */
-        protected uint8[] data;
+        protected uchar[] data;
+
+        /**
+         * Image width
+         */
+        protected int width;
+
+        /**
+         * Image height
+         */
+        protected int height;
+
+        /**
+         * Image stride
+         */
+        protected int stride;
 
         /**
          * Create the item from a uchar array
          */
-        public Item( uint8[] data ) {
+        public Item( uchar[] data, int width, int height, int stride ) {
             this.data = data;
+            this.width = width;
+            this.height = height;
+            this.stride = stride;
         }
 
         /**
          * Return the stored data
          */
-        public uint8[] get_png_data() {
+        public uchar[] get_png_data() {
             return this.data;
         }
 
@@ -52,5 +70,26 @@ namespace pdfpc.Renderer.Cache {
         public int get_length() {
             return this.data.length;
         }
+
+        /**
+         * Return the image width
+         */
+         public int get_width() {
+            return this.width;
+         }
+
+        /**
+         * Return the image height
+         */
+         public int get_height() {
+            return this.height;
+         }
+
+        /**
+         * Return the image stride
+         */
+         public int get_stride() {
+            return this.stride;
+         }
     }
 }

@@ -20,8 +20,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-using GLib;
+using Gdk.X11;
 using Gee;
+using GLib;
 
 namespace pdfpc {
     /**
@@ -120,7 +121,7 @@ namespace pdfpc {
             }
         }
         protected HashMap<string, KeyAction> actionNames;
-        protected class KeyDef {
+        protected class KeyDef : GLib.Object, Gee.Hashable<KeyDef> {
             public uint keycode { get; set; }
             public uint modMask { get; set; }
 
@@ -129,16 +130,13 @@ namespace pdfpc {
                 this.modMask = m;
             }
 
-            public static uint hash(void *_a) {
-                KeyDef a = (KeyDef)_a;
+            public uint hash() {
                 var uintHashFunc = Functions.get_hash_func_for(Type.from_name("uint"));
-                return uintHashFunc(a.keycode | a.modMask); // | is probable the best combinator, but for this small application it should suffice
+                return uintHashFunc(this.keycode | this.modMask); // | is probable the best combinator, but for this small application it should suffice
             }
 
-            public static bool equal(void *_a, void *_b) {
-                KeyDef a = (KeyDef) _a;
-                KeyDef b = (KeyDef) _b;
-                return a.keycode == b.keycode && a.modMask == b.modMask;
+            public bool equal_to(KeyDef other) {
+                return this.keycode == other.keycode && this.modMask == other.modMask;
             }
         }
         protected HashMap<KeyDef, KeyAction> keyBindings;
@@ -188,8 +186,10 @@ namespace pdfpc {
             this.current_user_slide_number = 0;
 
             // The standard hash function for classes is to use the pointer, so we have to provide our own
-            this.keyBindings = new HashMap<KeyDef, KeyAction>(KeyDef.hash, KeyDef.equal);
-            this.mouseBindings = new HashMap<KeyDef, KeyAction>(KeyDef.hash, KeyDef.equal);
+            this.keyBindings = new HashMap<KeyDef, KeyAction>();
+            //this.keyBindings = new HashMap<KeyDef, KeyAction>(KeyDef.hash, KeyDef.equal);
+            this.mouseBindings = new HashMap<KeyDef, KeyAction>();
+            //this.mouseBindings = new HashMap<KeyDef, KeyAction>(KeyDef.hash, KeyDef.equal);
             this.fillActionNames();
         }
 
@@ -274,7 +274,7 @@ namespace pdfpc {
          * Bind the (user-defined) keys
          */
         public void bind(uint keycode, uint modMask, string function) {
-            if (this.actionNames.contains(function)) {
+            if (this.actionNames.has_key(function)) {
                 this.keyBindings.set(new KeyDef(keycode, modMask), this.actionNames[function]);
             } else
                 stderr.printf("Warning: Unknown function %s\n", function);
@@ -298,7 +298,7 @@ namespace pdfpc {
          * Bind the (user-defined) keys
          */
         public void bindMouse(uint button, uint modMask, string function) {
-            if (this.actionNames.contains(function)) {
+            if (this.actionNames.has_key(function)) {
                 this.mouseBindings.set(new KeyDef(button, modMask), this.actionNames[function]);
             } else
                 stderr.printf("Warning: Unknown function %s\n", function);
@@ -876,7 +876,7 @@ namespace pdfpc {
                 return 0;
             }
             rect = view.convert_poppler_rectangle_to_gdk_rectangle(area);
-            return (uint)Gdk.x11_drawable_get_xid(view.get_window());
+            return (uint)((Gdk.X11.Window) view.get_window()).get_xid ();
         }
     }
 }

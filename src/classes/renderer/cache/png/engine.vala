@@ -20,9 +20,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-using GLib;
-using Gdk;
 using Cairo;
+using Gdk;
+using GLib;
 
 using pdfpc;
 
@@ -56,43 +56,14 @@ namespace pdfpc.Renderer.Cache {
         }
 
         /**
-         * Store a pixmap in the cache using the given index as identifier
+         * Store a surface in the cache using the given index as identifier
          */
-        public override void store( uint index, Pixmap pixmap ) {
-            int pixmap_width, pixmap_height;
-            pixmap.get_size( out pixmap_width, out pixmap_height );
+        public override void store( uint index, ImageSurface surface ) {
+            int surface_width = surface.get_width();
+            int surface_height = surface.get_height();
+            int surface_stride = surface.get_stride();
 
-            // The pixbuf has to be created before being handed over to the
-            // pixbuf_get_from_drawable, because Vala hightens the refcount of
-            // the return value of this function. If a new pixbuf is created by
-            // the function directly it will have a refcount of 2 afterwards
-            // and thereby will not be freed.
-            var pixbuf = new Pixbuf(
-                Colorspace.RGB,
-                false,
-                8,
-                pixmap_width,
-                pixmap_height
-            );
-            pixbuf_get_from_drawable(
-                pixbuf,
-                pixmap,
-                null,
-                0, 0,
-                0, 0,
-                pixmap_width, pixmap_height
-            );
-
-            uint8[] buffer;
-
-            try {
-                pixbuf.save_to_buffer( out buffer, "png", "compression", "1", null );
-            }
-            catch( Error e ) {
-                error( "Could not generate PNG cache image for slide %u: %s", index, e.message );
-            }
-
-            var item = new PNG.Item( buffer );
+            var item = new PNG.Item( surface.get_data(), surface_width, surface_height, surface_stride );
 
             this.mutex.lock();
             this.storage[index] = item;
@@ -100,45 +71,18 @@ namespace pdfpc.Renderer.Cache {
         }
 
         /**
-         * Retrieve a stored pixmap from the cache.
+         * Retrieve a stored surface from the cache.
          *
          * If no item with the given index is available null is returned
          */
-        public override Pixmap? retrieve( uint index ) {
+        public override ImageSurface? retrieve( uint index ) {
             var item = this.storage[index];
             if ( item == null ) {
                 return null;
             }
+            var surface = new ImageSurface.for_data( item.get_png_data(), Cairo.Format.RGB24, item.get_width(), item.get_height(), item.get_stride() );
 
-            var loader = new PixbufLoader();
-            try {
-                loader.write( item.get_png_data() );
-                loader.close();
-            }
-            catch( Error e ) {
-                error( "Could not load cached PNG image for slide %u: %s", index, e.message );
-            }
-
-            var pixbuf = loader.get_pixbuf();
-
-            var pixmap = new Gdk.Pixmap(
-                null,
-                pixbuf.get_width(),
-                pixbuf.get_height(),
-                24
-            );
-
-            Context cr = Gdk.cairo_create( pixmap );
-            Gdk.cairo_set_source_pixbuf( cr, pixbuf, 0, 0 );
-            cr.rectangle(
-                0,
-                0,
-                pixbuf.get_width(),
-                pixbuf.get_height()
-            );
-            cr.fill();
-
-            return pixmap;
+            return surface;
         }
     }
 }
