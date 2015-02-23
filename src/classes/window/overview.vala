@@ -400,7 +400,7 @@ namespace pdfpc.Window {
                                     Rectangle background_area, Rectangle cell_area,
                                     CellRendererState flags) {
             base.render(cr, widget, background_area, cell_area, flags);
-            if (flags != CellRendererState.SELECTED) {
+            if ((flags & CellRendererState.SELECTED) == 0) {
                 Gdk.cairo_rectangle(cr, cell_area);
                 cr.set_source_rgba(0,0,0,0.2);
                 cr.fill();
