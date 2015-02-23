@@ -303,7 +303,6 @@ namespace pdfpc.Metadata {
 
             // Cache some often used values to minimize thread locking in the
             // future.
-            MutexLocks.poppler.lock();
             this.page_count = this.document.get_n_pages();
             this.document.get_page( 0 ).get_size(
                 out this.original_page_width,
@@ -328,8 +327,6 @@ namespace pdfpc.Metadata {
 
             // Prepopulate notes from annotations
             notes_from_document();
-
-            MutexLocks.poppler.unlock();
         }
 
         /**
@@ -549,7 +546,6 @@ namespace pdfpc.Metadata {
             Poppler.Document document = null;
 
             try {
-                MutexLocks.poppler.lock();
                 document = new Poppler.Document.from_file(
                     file.get_uri(),
                     null
@@ -557,8 +553,6 @@ namespace pdfpc.Metadata {
             } catch( GLib.Error e ) {
                 GLib.printerr( "Unable to open pdf file: %s\n", e.message );
                 Posix.exit(1);
-            } finally {
-                MutexLocks.poppler.unlock();
             }
 
             return document;

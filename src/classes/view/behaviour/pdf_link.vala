@@ -133,7 +133,6 @@ namespace pdfpc.View.Behaviour {
         public void on_entering_slide( View.Base source, int page_number ) {
             // Get the link mapping table
             bool in_range = true;
-            MutexLocks.poppler.lock();
             Metadata.Pdf metadata = source.get_renderer().get_metadata() as Metadata.Pdf;
             if (page_number < metadata.get_slide_count()) {
                 this.page_link_mappings = metadata.get_action_mapping( page_number );
@@ -141,7 +140,6 @@ namespace pdfpc.View.Behaviour {
                 this.page_link_mappings = null;
                 in_range = false;
             }
-            MutexLocks.poppler.unlock();
             if (!in_range)
                 return;
 
