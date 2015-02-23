@@ -60,22 +60,6 @@ namespace pdfpc {
         protected uint timeout = 0;
 
         /**
-         * Color used for normal timer rendering
-         *
-         * This property is public and not accesed using a setter to be able to use
-         * Color.parse directly on it.
-         */
-        public Color normal_color;
-
-        /**
-         * Color used for pre-talk timer rendering
-         *
-         * This property is public and not accesed using a setter to be able to use
-         * Color.parse directly on it.
-         */
-        public Color pretalk_color;
-
-        /**
          * Default constructor taking the initial time as argument, as well as
          * the time to countdown until the talk actually starts.
          *
@@ -85,9 +69,6 @@ namespace pdfpc {
          */
         public TimerLabel( time_t start_time = 0 ) {
             this.start_time = start_time;
-
-            Color.parse( "white", out this.normal_color );
-            Color.parse( "green", out this.pretalk_color );
         }
 
         /**
@@ -214,29 +195,10 @@ namespace pdfpc {
          */
         protected uint last_minutes = 5;
 
-        /**
-         * Color used if last_minutes have been reached
-         *
-         * This property is public and not accesed using a setter to be able to use
-         * Color.parse directly on it.
-         */
-        public Color last_minutes_color;
-
-        /**
-         * Color used to represent negative number (time is over)
-         *
-         * This property is public and not accesed using a setter to be able to use
-         * Color.parse directly on it.
-         */
-        public Color negative_color;
-
         public CountdownTimer( int duration, uint last_minutes, time_t start_time = 0 ) {
             base(start_time);
             this.duration = duration;
             this.last_minutes = last_minutes;
-
-            Color.parse( "orange", out this.last_minutes_color );
-            Color.parse( "red", out this.negative_color );
         }
 
         /**
@@ -252,38 +214,23 @@ namespace pdfpc {
             // Normally the default is a positive number. Therefore a negative
             // sign is not needed and the prefix is just an empty string.
             string prefix = "";
+            Gtk.StyleContext context = this.get_style_context();
             if ( this.time < 0 ) // pretalk
             {
                 prefix = "-";
                 timeInSecs = -this.time;
-                this.modify_fg(
-                    StateType.NORMAL,
-                    this.pretalk_color
-                );
+                context.add_class("pretalk");
             } else {
+                context.remove_class("pretalk");
                 if ( this.time < this.duration ) {
                     timeInSecs = duration - this.time;
                     // Still on presentation time
-                    if ( timeInSecs < this.last_minutes * 60 ) {
-                        this.modify_fg(
-                            StateType.NORMAL,
-                            this.last_minutes_color
-                        );
-                    }
-                    else {
-                        this.modify_fg(
-                            StateType.NORMAL,
-                            this.normal_color
-                        );
-                    }
-
-                }
-                else {
+                    if ( timeInSecs < this.last_minutes * 60 )
+                        context.add_class("last-minutes");
+                } else {
                     // Time is over!
-                    this.modify_fg(
-                        StateType.NORMAL,
-                        this.negative_color
-                    );
+                    context.remove_class("last-minutes");
+                    context.add_class("overtime");
                     timeInSecs = this.time - duration;
 
                     // The prefix used for negative time values is a simple minus sign.
@@ -350,20 +297,15 @@ namespace pdfpc {
             // Normally the default is a positive number. Therefore a negative
             // sign is not needed and the prefix is just an empty string.
             string prefix = "";
+            Gtk.StyleContext context = this.get_style_context();
             if ( this.time < 0 ) // pretalk
             {
                 prefix = "-";
                 timeInSecs = -this.time;
-                this.modify_fg(
-                               StateType.NORMAL,
-                               this.pretalk_color
-                              );
+                context.add_class("pretalk");
             } else {
                 timeInSecs = this.time;
-                this.modify_fg(
-                               StateType.NORMAL,
-                               this.normal_color
-                              );
+                context.remove_class("pretalk");
             }
             this.show_time(timeInSecs, prefix);
         }

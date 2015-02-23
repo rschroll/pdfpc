@@ -141,16 +141,6 @@ namespace pdfpc.Window {
             this.add(this.slides_view);
             this.show_all();
 
-            Color black;
-            Color white;
-            Color.parse("black", out black);
-            Color.parse("white", out white);
-            this.slides_view.modify_base(StateType.NORMAL, black);
-            Gtk.Scrollbar vscrollbar = (Gtk.Scrollbar) this.get_vscrollbar();
-            vscrollbar.modify_bg(StateType.NORMAL, white);
-            vscrollbar.modify_bg(StateType.ACTIVE, black);
-            vscrollbar.modify_bg(StateType.PRELIGHT, white);
-
             this.metadata = metadata;
             this.presentation_controller = presentation_controller;
             this.presenter = presenter;

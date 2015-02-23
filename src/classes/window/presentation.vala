@@ -54,10 +54,6 @@ namespace pdfpc.Window {
 
             this.presentation_controller = presentation_controller;
 
-            Color black;
-            Color.parse( "black", out black );
-            this.modify_bg( StateType.NORMAL, black );
-
             var fixedLayout = new Fixed();
             fixedLayout.set_size_request(this.screen_geometry.width, this.screen_geometry.height);
             this.add( fixedLayout );
