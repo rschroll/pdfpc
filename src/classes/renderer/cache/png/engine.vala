@@ -20,9 +20,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-using Cairo;
-using Gdk;
 using GLib;
+using Gdk;
+using Cairo;
 
 using pdfpc;
 
@@ -58,12 +58,19 @@ namespace pdfpc.Renderer.Cache {
         /**
          * Store a surface in the cache using the given index as identifier
          */
-        public override void store( uint index, ImageSurface surface ) {
-            int surface_width = surface.get_width();
-            int surface_height = surface.get_height();
-            int surface_stride = surface.get_stride();
+        public override void store( uint index, Cairo.ImageSurface surface ) {
+            Gdk.Pixbuf pixbuf = Gdk.pixbuf_get_from_surface(surface, 0, 0, surface.get_width(),
+                surface.get_height());
+            uint8[] buffer;
 
-            var item = new PNG.Item( surface.get_data(), surface_width, surface_height, surface_stride );
+            try {
+                pixbuf.save_to_buffer( out buffer, "png", "compression", "1", null );
+            }
+            catch( Error e ) {
+                error( "Could not generate PNG cache image for slide %u: %s", index, e.message );
+            }
+
+            var item = new PNG.Item( buffer );
 
             this.mutex.lock();
             this.storage[index] = item;
@@ -80,9 +87,26 @@ namespace pdfpc.Renderer.Cache {
             if ( item == null ) {
                 return null;
             }
-            var surface = new ImageSurface.for_data( item.get_png_data(), Cairo.Format.RGB24, item.get_width(), item.get_height(), item.get_stride() );
+
+            var loader = new PixbufLoader();
+            try {
+                loader.write( item.get_png_data() );
+                loader.close();
+            }
+            catch( Error e ) {
+                error( "Could not load cached PNG image for slide %u: %s", index, e.message );
+            }
+
+            var pixbuf = loader.get_pixbuf();
+            Cairo.ImageSurface surface = new Cairo.ImageSurface(Cairo.Format.ARGB32,
+                pixbuf.get_width(), pixbuf.get_height());
+            Cairo.Context cr = new Cairo.Context(surface);
+            Gdk.cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
+            cr.rectangle(0, 0, pixbuf.get_width(), pixbuf.get_height());
+            cr.fill();
 
             return surface;
         }
     }
 }
+
