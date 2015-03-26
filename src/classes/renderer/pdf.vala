@@ -25,8 +25,6 @@ namespace pdfpc {
      * Pdf slide renderer
      */
     public class Renderer.Pdf : Renderer.Base {
-        public const int FAST_RENDER_TIME = 15000; // microseconds
-
         /**
          * Signal emitted every time a precached slide has been created
          *
@@ -55,8 +53,6 @@ namespace pdfpc {
          */
         public Renderer.Cache.Base? cache { get; protected set; default = null; }
 
-        protected bool[] fast_slide;
-
         protected bool prerendering = false;
 
         /**
@@ -72,9 +68,6 @@ namespace pdfpc {
             base(metadata, width, height);
 
             this.area = area;
-            this.fast_slide = new bool[metadata.get_slide_count()];
-            for (int i = 0; i < metadata.get_slide_count(); i++)
-                this.fast_slide[i] = false;
 
             // Calculate the scaling factor needed.
             this.scaling_factor = Math.fmin(width / metadata.get_page_width(),
@@ -96,13 +89,6 @@ namespace pdfpc {
         public override void render(Cairo.Context context, int slide_number, int display_width,
             int display_height)
             throws Renderer.RenderError {
-            
-            // Each slide may be in one of three states, indicated by the combination of
-            // the fast_slide array and the cache:
-            // 1) Never been rendered -- fast_slide = false, cache = null
-            // 2) Rendered, judged fast -- fast_slide = true, cache = null
-            // 3) Rendered, judged slow -- fast_slide = false, cache != null
-            
             var metadata = this.metadata as Metadata.Pdf;
 
             // Check if a valid page is requested, before locking anything.
@@ -110,7 +96,7 @@ namespace pdfpc {
                 throw new Renderer.RenderError.SLIDE_DOES_NOT_EXIST(
                     "The requested slide '%i' does not exist.", slide_number);
             }
-            if (this.cache == null || this.fast_slide[slide_number]) {
+            if (this.cache == null) {
                 render_direct(context, slide_number, display_width, display_height);
                 return;
             }
@@ -133,29 +119,18 @@ namespace pdfpc {
             Gdk.Pixbuf? pixbuf = (this.cache != null) ? this.cache.retrieve(slide_number) : null;
             
             if (pixbuf == null) {
-                bool needs_cache = !this.fast_slide[slide_number];
-                if (!needs_cache && (display_width == 0 || display_height == 0))
-                    return null;
-
-                int render_width = needs_cache ? this.width : display_width;
-                int render_height = needs_cache ? this.height : display_height;
+                int render_width = this.width;
+                int render_height = this.height;
                 Cairo.ImageSurface current_slide = new Cairo.ImageSurface(Cairo.Format.RGB24,
                     render_width, render_height);
                 Cairo.Context cr = new Cairo.Context(current_slide);
 
-                int64 start = get_monotonic_time();
                 this.render_direct(cr, slide_number, render_width, render_height);
-                if (get_monotonic_time() - start < FAST_RENDER_TIME)
-                    this.fast_slide[slide_number] = true;
-
                 pixbuf = Gdk.pixbuf_get_from_surface(current_slide, 0, 0, render_width,
                     render_height);
-                if (!needs_cache)
-                    return pixbuf;
                 // We will only end up here the first time a slide has been rendered.
                 this.slide_prerendered(slide_number);
-                if (!this.fast_slide[slide_number])
-                    this.cache.store(slide_number, pixbuf);
+                this.cache.store(slide_number, pixbuf);
             }
 
             if (display_width == 0 || display_height == 0)
