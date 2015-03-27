@@ -48,10 +48,7 @@ namespace pdfpc {
          */
         protected Metadata.Area area;
 
-        /**
-         * Cache store to be used
-         */
-        public Renderer.Cache.Base? cache { get; protected set; default = null; }
+        protected Cairo.RecordingSurface[] cache = null;
 
         protected bool prerendering = false;
 
@@ -72,11 +69,16 @@ namespace pdfpc {
             // Calculate the scaling factor needed.
             this.scaling_factor = Math.fmin(width / metadata.get_page_width(),
                 height / metadata.get_page_height());
-            this.width = (int) (metadata.get_page_width() * this.scaling_factor);
-            this.height = (int) (metadata.get_page_height() * this.scaling_factor);
+            //this.width = (int) metadata.get_page_width();
+            //this.height = (int) metadata.get_page_height();
+            double page_aspect = metadata.get_page_width() / metadata.get_page_height();
+            if (page_aspect > (double) width / height)
+                this.width = (int) (height * page_aspect);
+            else
+                this.height = (int) (width / page_aspect);
 
             if (!Options.disable_caching) {
-                this.cache = Renderer.Cache.create(metadata);
+                this.cache = new Cairo.RecordingSurface[metadata.get_slide_count()];
             }
         }
 
@@ -86,7 +88,7 @@ namespace pdfpc {
          * If the requested slide is not available an
          * RenderError.SLIDE_DOES_NOT_EXIST error is thrown.
          */
-        public override void render(Cairo.Context context, int slide_number, int display_width,
+        public override void render(Cairo.Context? context, int slide_number, int display_width,
             int display_height)
             throws Renderer.RenderError {
             var metadata = this.metadata as Metadata.Pdf;
@@ -97,49 +99,39 @@ namespace pdfpc {
                     "The requested slide '%i' does not exist.", slide_number);
             }
             if (this.cache == null) {
-                render_direct(context, slide_number, display_width, display_height);
+                if (context != null)
+                    render_direct(context, slide_number, display_width, display_height);
                 return;
             }
 
-            Gdk.Pixbuf pixbuf_scaled = render_pixbuf(slide_number, display_width, display_height);
-            Gdk.cairo_set_source_pixbuf(context, pixbuf_scaled, 0, 0);
-            context.rectangle(0, 0, display_width, display_height);
-            context.fill();
+            Cairo.RecordingSurface record = this.cache[slide_number];
+            if (record == null) {
+                record = new Cairo.RecordingSurface(Cairo.Content.COLOR,
+                    {0, 0, this.width, this.height});
+                Cairo.Context record_context = new Cairo.Context(record);
+                this.render_direct(record_context, slide_number, this.width, this.height);
+                this.cache[slide_number] = record;
+                this.slide_prerendered(slide_number);
+            }
+            if (context != null) {
+                double scale = double.min(display_width / (double) this.width,
+                    display_height / (double) this.height);
+                context.scale(scale, scale);
+                context.set_source_surface(record, 0, 0);
+                context.paint();
+            }
         }
-        
+
         public Gdk.Pixbuf? render_pixbuf(int slide_number, int display_width, int display_height)
             throws Renderer.RenderError {
-            Metadata.Pdf metadata = this.metadata as Metadata.Pdf;
-
-            // Check if a valid page is requested, before locking anything.
-            if (slide_number < 0 || slide_number >= metadata.get_slide_count()) {
-                throw new Renderer.RenderError.SLIDE_DOES_NOT_EXIST(
-                    "The requested slide '%i' does not exist.", slide_number);
-            }
-            Gdk.Pixbuf? pixbuf = (this.cache != null) ? this.cache.retrieve(slide_number) : null;
-            
-            if (pixbuf == null) {
-                int render_width = this.width;
-                int render_height = this.height;
-                Cairo.ImageSurface current_slide = new Cairo.ImageSurface(Cairo.Format.RGB24,
-                    render_width, render_height);
-                Cairo.Context cr = new Cairo.Context(current_slide);
-
-                this.render_direct(cr, slide_number, render_width, render_height);
-                pixbuf = Gdk.pixbuf_get_from_surface(current_slide, 0, 0, render_width,
-                    render_height);
-                // We will only end up here the first time a slide has been rendered.
-                this.slide_prerendered(slide_number);
-                this.cache.store(slide_number, pixbuf);
-            }
-
-            if (display_width == 0 || display_height == 0)
-                return null;
-
-            return pixbuf.scale_simple(display_width, display_height, Gdk.InterpType.BILINEAR);
+            Cairo.ImageSurface current_slide = new Cairo.ImageSurface(Cairo.Format.RGB24,
+                display_width, display_height);
+            Cairo.Context context = new Cairo.Context(current_slide);
+            this.render(context, slide_number, display_width, display_height);
+            return Gdk.pixbuf_get_from_surface(current_slide, 0, 0, display_width, display_height);
         }
 
-        private void render_direct(Cairo.Context? context, int slide_number, int display_width,
+        private void render_direct(Cairo.Context context, int slide_number, int display_width,
             int display_height) {
             Metadata.Pdf metadata = this.metadata as Metadata.Pdf;
             double scale = double.min(display_width / metadata.get_page_width(),
@@ -173,7 +165,7 @@ namespace pdfpc {
                 // pixmap in the cache if it is enabled. This
                 // is exactly what we want.
                 try {
-                    this.render_pixbuf(i, 0, 0);
+                    this.render(null, i, 0, 0);
                 } catch(Renderer.RenderError e) {
                     error("Could not render page '%i' while pre-rendering: %s", i, e.message);
                 }

@@ -56,7 +56,7 @@ namespace pdfpc {
          * If the requested slide is not available an
          * RenderError.SLIDE_DOES_NOT_EXIST error should be thrown.
          */
-        public abstract void render(Cairo.Context context, int slide_number, int width, int height)
+        public abstract void render(Cairo.Context? context, int slide_number, int width, int height)
             throws RenderError;
     }
 
